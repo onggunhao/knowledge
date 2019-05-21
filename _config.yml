@@ -1,6 +1,6 @@
 remote_theme: pmarsceill/just-the-docs
 title: Ethereum Cheatsheet
 description: Ethereum cheatsheet
-url: "https://daniel.ai/ethereum-cheatsheet" # the base hostname & protocol for your site, e.g. http://example.com
+url: "https://daniel.ai" # the base hostname & protocol for your site, e.g. http://example.com
 plugins:
   - jemoji
