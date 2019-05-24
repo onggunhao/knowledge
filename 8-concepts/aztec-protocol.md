@@ -1,6 +1,6 @@
 ---
 layout: default
-title: Meta Transactions
+title: Aztec Protocol
 parent: Concepts
 ---
 
