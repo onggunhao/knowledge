@@ -1,6 +1,6 @@
 remote_theme: pmarsceill/just-the-docs
-title: Ethereum Cheatsheet
-description: Ethereum cheatsheet
+title: Daniel's Notes
+description: Daniel's notes
 # url: "daniel.ai" # the base hostname & protocol for your site, e.g. http://example.com
 # baseurl: "/ethereum-cheatsheet"
 plugins:

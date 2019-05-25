@@ -16,3 +16,7 @@ This is my Ethereum cheatsheet that I'll be adding to as my [tree of knowledge](
 #### Resources (to be categorized):
 
 - [ ] ScottWorks' Consensys notes https://github.com/ScottWorks/ConsenSys-Academy-Notes
+- [ ] Crypto Canon [Crypto Canon](https://a16z.com/2018/02/10/crypto-readings-resources/)
+- [ ] Zero knowledge resources
+- [ ] [Boneh Cryptography Textbook](https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf)
+- [ ] [IPFS Protoschool](https://proto.school/#/)

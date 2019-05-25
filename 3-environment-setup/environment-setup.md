@@ -1,7 +1,7 @@
 ---
 layout: default
 title: Environment Setup
-nav_order: 2
+nav_order: 3
 description: "Environment setup"
 has_children: true
 permalink: /environment-setup
@@ -220,3 +220,7 @@ module.exports = {
 - Instantiating contracts
 - Keep track of data
 
+
+# Estimating Gas
+
+https://ethgasstation.info/
