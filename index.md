@@ -24,13 +24,6 @@ My [learning repo](https://github.com/onggunhao/learning) is public, and you can
 
 ## Queue:
 
-1. [Crypto Canon](https://a16z.com/2018/02/10/crypto-readings-resources/): overall knowledge of blockchain space
-2. Cryptography Course
-   - [ ] [Boneh Cryptography Textbook](https://crypto.stanford.edu/~dabo/cryptobook/BonehShoup_0_4.pdf)
-   - [ ] Zero knowledge proof resources
-3. Decentralized Storage
-   - [ ] [IPFS Protoschool](https://proto.school/#/)
-4. Basics of Finance
-   - [ ] CFA Level 1 equivalent course
-5. DeFi protocols
-   - [ ] [Dharma Developers](https://dharmaprotocol.github.io/developer-docs/#/?id=underwriters)
+I use Github Kanban to prioritize my backlog of things to learn.
+
+![](images/2019-05-31-16-01-32.png)
