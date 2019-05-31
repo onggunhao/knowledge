@@ -26,4 +26,4 @@ My [learning repo](https://github.com/onggunhao/learning) is public, and you can
 
 I use Github Kanban to prioritize my backlog of things to learn.
 
-![](images/2019-05-31-16-01-32.png)
+[![](images/2019-05-31-16-01-32.png)](https://github.com/onggunhao/learning/projects/1)
