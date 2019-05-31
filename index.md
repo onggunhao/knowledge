@@ -7,7 +7,6 @@ permalink: /
 ---
 
 # Tree of Knowledge
-
 {: .fs-9 }
 
 This is the [Tree of Knowledge](https://lifehacker.com/elon-musk-on-learning-new-things-view-knowledge-as-a-t-1677850415) that I'm starting as part of my sabbatical from May 2019 - Aug 2019. The focus of the sabbatical is on blockchain and defi.
