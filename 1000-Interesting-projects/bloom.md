@@ -1,3 +1,9 @@
+---
+layout: default
+title: Bloom
+parent: Interesting
+---
+
 Credit scores depend on historical credit
 Score disappears when going overseas
 Personal information of 133mn americans stolen. Inefficient monopolies w
