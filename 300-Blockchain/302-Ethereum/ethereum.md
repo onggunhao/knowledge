@@ -23,7 +23,6 @@ permalink: /blockchain/ethereum
 
 ## Geth
 
-
 ## Metamask
 
 Source: [Consensys Academy Lesson](https://learn.consensys.net/unit/view/id:1906)
@@ -162,7 +161,9 @@ module.exports = {
 ```
 
 #### Untracking truffle-config.js
+
 Sometimes it's useful (e.g. if we have a HDwallet mnemonic there for Ropsten deployment)
+
 ```
 // To have a different truffle-config from the rest of the repo, untrack it in local repo
 git update-index --assume-unchanged truffle-config.js
@@ -174,10 +175,14 @@ git update-index --assume-unchanged truffle-config.js
 truffle init
 truffle unbox metacoin
 
-truffle compile
-truffle migrate // deploys contracts onto blockchain
+truffle compile --all // re-compiles all contracts, otherwise only those changed
+truffle migrate --reset // re-deploys all contracts
 
 truffle develop // opens up console, with live contracts deployed
+// in shell
+> var instance = ContractName.at(ContractName.address)
+> instance.method(arg)
+
 ```
 
 ### Truffle Test:
@@ -186,6 +191,7 @@ truffle develop // opens up console, with live contracts deployed
 - Can also be written in solidity but it's less ideal (quirks in Solidity - JS interaction are not accounted for)
 
 #### Truffle Test Cheatsheet
+
 Add to code snippet below to remember test best practices / cookbooks
 
 ```javascript
@@ -260,24 +266,22 @@ contract("MetaCoin", accounts => {
 
 This arises when nothing is specified in `truffle-config.js`. See [my answer on Stackoverflow](https://ethereum.stackexchange.com/questions/69286/the-network-id-specified-in-the-truffle-config-4447-does-not-match-the-one-ret/71087#71087)
 
-
 ## EthPM
 
 `truffle install <pkg>` installs EthPM packages in the `installed_packages` directory
 
-* Gotcha 1: You have to make sure all EthPM-installed packages use the same solidity compiler
-* Gotcha 2: You are making replicated copies of contracts and re-deploying them, so it might cost quite a bit
+- Gotcha 1: You have to make sure all EthPM-installed packages use the same solidity compiler
+- Gotcha 2: You are making replicated copies of contracts and re-deploying them, so it might cost quite a bit
 
-- There is some stuff about EthPM v2 where you need to deploy packages yourself
-- https://github.com/trufflesuite/truffle/issues/1883
-- https://github.com/trufflesuite/trufflesuite.com/issues/398
+* There is some stuff about EthPM v2 where you need to deploy packages yourself
+* https://github.com/trufflesuite/truffle/issues/1883
+* https://github.com/trufflesuite/trufflesuite.com/issues/398
 
 ## Drizzle
 
 - Hook up to chain via Web3
 - Instantiating contracts
 - Keep track of data
-
 
 ## Estimating Gas
 
@@ -287,8 +291,8 @@ https://ethgasstation.info/
 
 ## Features of Solidity
 
-* Statically typed (i.e. types must be specified at compile time)
-* Compiled language (bytecode is executed by EVM)
+- Statically typed (i.e. types must be specified at compile time)
+- Compiled language (bytecode is executed by EVM)
 
 ## Types
 
@@ -304,7 +308,7 @@ bool public <var> // automatically creates getter function
 
 ##### Logical Operators
 
-* Common short circuiting rules apply (i.e. )
+- Common short circuiting rules apply (i.e. )
 
 ```
 // logical operators
@@ -317,7 +321,7 @@ bool public <var> // automatically creates getter function
 
 #### Integer
 
-* Default assugnment: 0
+- Default assugnment: 0
 
 ```
 // Signed vs Unsigned
@@ -333,10 +337,19 @@ uint8, uint16, uint64, int256
 20 byte value
 
 Two types
-* address
-* address payable
+
+- address
+- address payable
 
 ##### address functions
+
+[Good article on difference between `.send`, `.transfer`, `.call`](https://medium.com/daox/three-methods-to-transfer-funds-in-ethereum-by-means-of-solidity-5719944ed6e9)
+
+- `.send`, `.call` require 2300 gas limit to run fallback function (which is only enough to emit an event)
+- **Gotcha 1:**. `send` does not throw exception on out-of-gas error (i.e. can fail silently, very dangerous!). Use `.transfer` instead
+- **Gotcha 2**: `.call` is very flexible (can specify gas), but does not protect against re-entrancy attacks
+
+![](image/address-method-comparison.png)
 
 ```
 // address functions
@@ -382,8 +395,8 @@ byte[] dynamicArr;
 
 #### Enums
 
-* Big gotcha: `enums` are represented as integers, i.e. index of value in `enum` declaration
-* Return value will be `uint<X>`, where X will autoexpand to needed values
+- Big gotcha: `enums` are represented as integers, i.e. index of value in `enum` declaration
+- Return value will be `uint<X>`, where X will autoexpand to needed values
 
 ```javascript
 pragma solidity >=0.4.16 <0.7.0;
@@ -414,17 +427,17 @@ contract test {
 
 #### Function types
 
-* Functions can be passed params to other functions (?)
+- Functions can be passed params to other functions (?)
 
 ##### Types of functions
 
-* internal vs external (internal by default)
-* pure, constant, view
-* payable
+- internal vs external (internal by default)
+- pure, constant, view
+- payable
 
 ### Complex (reference) types
 
-* Need to always think if we store in storage or memory
+- Need to always think if we store in storage or memory
 
 #### Arrays
 
@@ -451,9 +464,12 @@ uint[] memory a = new uint[](<variable length>)
 
 #### Structs
 
-* Only restriction: cannot contain member of its own type
-* Can contain mappings / arrays, and be members of mappings / arrays
-* Structs stored as local vars (i.e. memory?) are passed by reference (not copied)
+- Only restriction: cannot contain member of its own type
+- Can contain mappings / arrays, and be members of mappings / arrays
+- Structs stored as local vars (i.e. memory?) are passed by reference (not copied)
+
+- [ ] Why do we sometimes need to call `new` when creating a struct?
+- [ ] Why do we sometimes need a `storage` or `memory` when creating a struct
 
 ```
 // Defines a new type with two fields.
@@ -471,12 +487,20 @@ uint[] memory a = new uint[](<variable length>)
     }
 ```
 
+##### Adding Struct to a Mapping
+
+```
+
+```
+
+##### Adding a Struct to a Dynamic Array
+
 ### Mappings (i.e. hashtables)
 
-* Hashtables
-* Gotcha: every value is virtually initialized to its default (i.e. 0)
-* Mappings have no length and are not iterable
-* Keys in mapping are stored as `keccak256` hash of `keyValue`
+- Hashtables
+- Gotcha: every value is virtually initialized to its default (i.e. 0)
+- Mappings have no length and are not iterable
+- Keys in mapping are stored as `keccak256` hash of `keyValue`
 
 ```
 mapping(_keyType => _valueType);
@@ -528,7 +552,7 @@ private (only accessible from contract)
 internal (all derived contracts can access)
 ```
 
-* Calling external function from within same contract (why would we do this though?)
+- Calling external function from within same contract (why would we do this though?)
 
 ```
 pragma solidity ^0.5.0;
@@ -554,6 +578,7 @@ returns (string _name) // does not require return in function body
 ```
 
 **Returning reference types**: (e.g. arrays, structs), data location must be in **memory** to be returned
+
 ```
 contract Adoption {
     address[16] public pets;
@@ -579,6 +604,7 @@ function f() pure
 // payable can handle Ether
 function receivePayment() payable
 ```
+
 ### Throwing exceptions
 
 ```
@@ -587,24 +613,29 @@ require(external.send(amount)) // validate response from external contract
 require(block.number > SOME_BLOCK_NUM)
 require(balance[msg.sender] >= amount)
 ```
-* Validate conditions / return values
-* more forgiving
-* uses `0xfd` opcode to cause error
-* Used towards beginning of a function
+
+- Validate conditions / return values
+- more forgiving
+- uses `0xfd` opcode to cause error
+- Used towards beginning of a function
 
 ```
 revert()
 ```
-* Always throws exception
-* Uses 0xfd opcode to cause error
-* Undo all state changes
-* Refund any remaining gas to caller
+
+- Always throws exception
+- Uses 0xfd opcode to cause error
+- Undo all state changes
+- Refund any remaining gas to caller
+
 ```
 
 ```
+
 assert()
 c = a+b; assert(c > b); // check for overflow
 assert(this.balance <= totalSupply); // check invariants
+
 ```
 * Test internal errors and check for invariants.
 * Should aim to never reach a failing assert statement
@@ -617,11 +648,13 @@ assert(this.balance <= totalSupply); // check invariants
 ### Function Modifiers
 
 ```
+
 modifier costs(uint price) {
-        if (msg.value >= price) {
-            _;  // executes the remainder of contract
-        }
-    }
+if (msg.value >= price) {
+\_; // executes the remainder of contract
+}
+}
+
 ```
 
 ### Fallback Function
@@ -631,9 +664,11 @@ modifier costs(uint price) {
 * Can only rely on 2300 gas being available - cannot do a lot of things
 
 ```
+
 function() public payable {
-  balance += msg.value
+balance += msg.value
 }
+
 ```
 
 ### Function overloading
@@ -642,8 +677,10 @@ function() public payable {
 * Inherited functions: Child contract will override parent contract function
 
 ```
-function f (uint _a)
-function f (uint _a, bytes32 _b)
+
+function f (uint \_a)
+function f (uint \_a, bytes32 \_b)
+
 ```
 
 ## Storage and Memory
@@ -659,6 +696,7 @@ function f (uint _a, bytes32 _b)
 * Call stack = cheapest, but only 1024 call depth
 
 ```
+
 state variables // storage
 function arguments // memory
 
@@ -670,6 +708,7 @@ function arguments // memory
 * Except for arrays, structs, mapping (important!)
 
 ```
+
 // Following are passed by reference (i.e. modifies storage values)
 array[] storage;
 struct n storage;
@@ -677,6 +716,7 @@ mapping n storage;
 
 // Make a copy with the memory keyword
 struct b memory = n;
+
 ```
 
 ## Contract Structure
@@ -685,18 +725,20 @@ struct b memory = n;
 
 
 ```
+
 pragma solidity ^0.5.0; // valid compiler version, need to be very careful
 
-contract SimpleStorage {  // Capitalize by convention
-  uint value;
-  event logChange()
-  modifier onlyOwner🇲🇲
+contract SimpleStorage { // Capitalize by convention
+uint value;
+event logChange()
+modifier onlyOwner🇲🇲
 
-  constructor() or SimpleStorage()
+constructor() or SimpleStorage()
 
-  sampleFunction();
-  // can also include inline assembly
+sampleFunction();
+// can also include inline assembly
 }
+
 ```
 
 ## Reading Smart Contracts
@@ -721,14 +763,16 @@ contract SimpleStorage {  // Capitalize by convention
 * Adding `indexed` keyword to event params allows searchability
 
 ```
+
 pragma solidity >= 0.5.0 < 0.6.0;
 contract ExampleContract {
-  event LogReturnValue(address indexed _from, int256 _value);
-  function foo(int256 _value) public returns (int256) {
-     emit LogReturnValue(msg.sender, _value);
-     return _value;
-  }
+event LogReturnValue(address indexed \_from, int256 \_value);
+function foo(int256 \_value) public returns (int256) {
+emit LogReturnValue(msg.sender, \_value);
+return \_value;
 }
+}
+
 ```
 
 ## Factory Contracts
@@ -736,15 +780,16 @@ contract ExampleContract {
 * Solidity is not OO, but adopts some design patterns (e.g. factory design pattern)
 
 ```
+
 contract Token {
-  ...
+...
 }
 
 import "./Token.sol"
 contract TokenFactory {
-  function createToken (uint256 _initalAmount) {
-    Token newToken = new Token(_initialAmount)  // Creates new instance
-  }
+function createToken (uint256 \_initalAmount) {
+Token newToken = new Token(\_initialAmount) // Creates new instance
+}
 }
 
 ```
@@ -762,34 +807,36 @@ contract TokenFactory {
 
 ### Referencing another contract
 ```
+
 pragma solidity ^0.4.1;
 
 contract C1 {
-    uint x;
-    function C1() public {
-        x = 10;
-    }
-    function setX(uint _x) public returns(bool) {
-        x = _x;
-        return true;
-    }
-    function getX() public constant returns(uint) {
-        return x;
-    }
+uint x;
+function C1() public {
+x = 10;
+}
+function setX(uint \_x) public returns(bool) {
+x = \_x;
+return true;
+}
+function getX() public constant returns(uint) {
+return x;
+}
 }
 
 contract C2 {
-    function f2(address addrC1)
-      public
-      constant
-      returns(uint)
-    {
-        // Referencing an existing contract at an address
-        C1 c1 = C1(addrC1);
-        return c1.getX();
-    }
+function f2(address addrC1)
+public
+constant
+returns(uint)
+{
+// Referencing an existing contract at an address
+C1 c1 = C1(addrC1);
+return c1.getX();
 }
-```
+}
+
+````
 
 ### Call vs CallCode vs DelegateCall
 
@@ -804,7 +851,7 @@ c2.call(bytes4(sha3("setNum(uint256)"))
 // is the equivalent of
 C2 c2 = C2(_c2);
 c2.setNum(_num);
-```
+````
 
 ```javascript
 pragma solidity ^0.4.15;
@@ -854,10 +901,10 @@ contract C3 {
 
 ### Inheritance
 
-* Derived contract inherits state and functions, can override functions
-* Only a single contract is created on blockchain, i.e. all code is compiled into created contract
-* Use `super` to call nearest inherited contract, or by explicitly calling the contract name wanted (e.g. `mortal.kill()`)
-* **Gotcha:** B
+- Derived contract inherits state and functions, can override functions
+- Only a single contract is created on blockchain, i.e. all code is compiled into created contract
+- Use `super` to call nearest inherited contract, or by explicitly calling the contract name wanted (e.g. `mortal.kill()`)
+- **Gotcha:** B
 
 ```javascript
 pragma solidity >=0.5.0 <0.7.0;
@@ -919,8 +966,8 @@ contract PriceFeed is Owned, Mortal, Named("GoldFeed") {
 
 #### Linearization of inheritance
 
-* Order is from "most base like" to "most derived"
-*  `contract A is X, Y, Z` means that Z is the most derived contract (i.e. overrides previous)
+- Order is from "most base like" to "most derived"
+- `contract A is X, Y, Z` means that Z is the most derived contract (i.e. overrides previous)
 
 ```javascript
 contract X {}
@@ -930,8 +977,8 @@ contract C is A, X {} // will not compile
 
 ### Abstract Contracts
 
-* Can be used as a base contract and extended, but does not have function implementations. Does not compile
-* Most used to interface with external contracts
+- Can be used as a base contract and extended, but does not have function implementations. Does not compile
+- Most used to interface with external contracts
 
 ```javascript
 contract Feline {
@@ -944,7 +991,7 @@ contract Cat is Feline {
 
 ### Interface Contracts
 
-* Limited to what the Contract ABI represents
+- Limited to what the Contract ABI represents
 
 ```javascript
 interface Token {
@@ -952,7 +999,58 @@ interface Token {
 }
 ```
 
+## Libaries
+
+- Exist for code reuse - allow library functions to modify state of calling contract (i.e. `delegatecall`)
+- No storage variables are defined (do not have state)
+- GOTCHA: can define struct data type, but will not be saved in storage until implemented in contract
+- GOTCHA: calling library function is more expensive than calling internal function (in exchange for cheaper deployment)
+
+```javascript
+deployer.deploy(LibA);
+deployer.link(LibA, ContractB);
+deployer.deploy(ContractB);
+```
+
+```javascript
+var ENS = artifacts.require("ens/ENS");
+var MyContract = artifacts.require("MyContract");
+
+module.exports = function(deployer) {
+  // Only deploy ENS if there's not already an address already.
+  // i.e., don't deploy if we're using the canonical ENS address,
+  // but do deploy it if we're on a test network and ENS doesn't exist.
+  deployer.deploy(ENS, { overwrite: false }).then(function() {
+    return deployer.deploy(MyContract, ENS.address);
+  });
+};
+```
+
+[Good Overview of Libraries and Solidity](https://blog.aragon.org/library-driven-development-in-solidity-2bebcaf88736/)
+
+### EthPM
+
+- Just import in `.sol` file
+- Can pubish library (similar to NPM). Add a `ethpm.json` in root directory
+
+```
+truffle install <pkgname>
+```
+
 # Smart Contract Security
+
+## Re-entrancy attack
+
+- [ ] [Good explanation on Re-entrancy](https://medium.com/@gus_tavo_guim/reentrancy-attack-on-smart-contracts-how-to-identify-the-exploitable-and-an-example-of-an-attack-4470a2d8dfe4)
+
+* **Gist:** Setting balance to 0 only after a `.call` can be taken advantage of, as `.call` only terminates after entire transaction sequence. This can be taken advantage of by a recursive fallback function
+
+```
+if (!msg.sender.call.value(balances[msg.sender])()) {
+      throw;
+}
+balances[msg.sender] = 0;
+```
 
 # Concepts
 
@@ -968,58 +1066,54 @@ interface Token {
 
 https://ethereum.stackexchange.com/questions/413/can-a-contract-safely-rely-on-block-timestamp
 
-# Crowdsale
+## Commit-Reveal Scheme
 
-reference contract for cryptocurrency is ERC20 standard (standard interface)
-openzeppelin-solidity has reference contracts for crowdsales
+- Voters vote, submit hash. When revealing vote, it is only accepted if hash matches salt and vote.
+- Examples: Colony
 
-tmux for terminal handling
+- [ ] Colony Blogs [1](https://blog.colony.io/towards-better-ethereum-voting-protocols-7e54cb5a0119/). [2](https://blog.colony.io/token-weighted-voting-implementation-part-2-13e490fe1b8a/), [3](https://blog.colony.io/token-weighted-voting-implementation-part-1-72f836b5423b/)
 
-```
+## End-to-end encryption of content
+
+- [ ] https://medium.com/fluidity/keyspace-end-to-end-encryption-using-ethereum-and-ipfs-87b04b18156b
+
+## Multisig wallet
+
+- [ ] https://blog.unchained-capital.com/a-simple-safe-multisig-ethereum-smart-contract-for-hardware-wallets-a107bd90bb52?gi=e275d8a751e2
+- [ ] https://blog.gridplus.io/toward-an-ethereum-multisig-standard-c566c7b7a3f6
+- [ ] https://medium.com/@yenthanh/list-of-multisig-wallet-smart-contracts-on-ethereum-3824d528b95e
+
+## Metatransactions
+
+- [ ] https://medium.com/coinmonks/gasless-transactions-f75382095c4f
+- [ ] Talk to Austin Griffith
+
+## Key Management
+
+- ERC725: on-chain key management
+- [ ] https://medium.com/coinmonks/crypto-ux-and-key-management-6e35b3cd466d
+
+## Using OpenZeppelin Contracts
+
+```shell
 init truffle
 npm install openzeppelin-solidity
 npm install all dependencies that openzep-solidity uses
 ```
 
-.babelrc (use presets so we can use ES6)
+- All `.sol` files will be in `node_modules`
 
-truffle-config.js because truffle.js conflicts with windows
+## Crowdsale
 
-- only need development and ganache-cli (8545)
-- specify solc version, with optimizer (TODO: what is that?), needs to be compatible with version of Truffle (find out by running truffle version)
+Just use the OpenZeppelin contracts. Industry standard
 
-Create a dapptoken.sol in /contracts
+### Variants:
 
-openzep-solidity library in node_modules -> openzeppelin -> DetailedERC20.sol
+1. **Validation**: CappedCrowdsale, WhitelistedCrowdsale (only allow whitelisted participants), TimedCrowdsale (i.e. from X to Y time)
 
-- importing it in custom contract file
+2. **Distribution**: Default (release tokens once contribution made), RefundableCrowdsale
 
-```
-truffle compile
-truffle migrate
-```
-
-```
-truffle console
-DappToken.deployed().then((t) => { token = t })
-token.address
-```
-
-Crowdsale contract
-
-- Normal contract, only has 60,000 tokens that can be bought at 1 Dai each
-  (how do we convert the rate?)
-
-Validation
-
-- CappedCrowdsale (in Dai)
-- Whitelisted Crowdsale (only allow whitelisted participants to purchase tokens)
-- TimedCrowdsale (i.e. from X time to Y time)
-
-Distribution
-
-- Default behavior: release tokens once loan is made
-- RefundableCrowdsale?
+3.
 
 Tokens
 
