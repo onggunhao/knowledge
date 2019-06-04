@@ -470,6 +470,7 @@ uint[] memory a = new uint[](<variable length>)
 
 - [ ] Why do we sometimes need to call `new` when creating a struct?
 - [ ] Why do we sometimes need a `storage` or `memory` when creating a struct
+- [ ] [Adding an Array to a Struct](https://medium.com/loom-network/ethereum-solidity-memory-vs-storage-how-to-initialize-an-array-inside-a-struct-184baf6aa2eb)
 
 ```
 // Defines a new type with two fields.
@@ -607,11 +608,11 @@ function receivePayment() payable
 
 ### Throwing exceptions
 
-```
-require(condition)
-require(external.send(amount)) // validate response from external contract
-require(block.number > SOME_BLOCK_NUM)
-require(balance[msg.sender] >= amount)
+```javascript
+require(condition);
+require(external.send(amount)); // validate response from external contract
+require(block.number > SOME_BLOCK_NUM);
+require(balance[msg.sender] >= amount);
 ```
 
 - Validate conditions / return values
@@ -619,8 +620,8 @@ require(balance[msg.sender] >= amount)
 - uses `0xfd` opcode to cause error
 - Used towards beginning of a function
 
-```
-revert()
+```javascript
+revert();
 ```
 
 - Always throws exception
@@ -629,86 +630,71 @@ revert()
 - Refund any remaining gas to caller
 
 ```
-
-```
-
 assert()
 c = a+b; assert(c > b); // check for overflow
 assert(this.balance <= totalSupply); // check invariants
-
 ```
-* Test internal errors and check for invariants.
-* Should aim to never reach a failing assert statement
-* Meant to help static analyzers or formal verification tools examine contracts (see [article](https://medium.com/blockchannel/the-use-of-revert-assert-and-require-in-solidity-and-the-new-revert-opcode-in-the-evm-1a3a7990e06e))
-* Steals all the gas
-* uses `0xfe` opcode to cause error
-* Typically used for overflow / underflow
-* Used towards end of a function
+
+- Test internal errors and check for invariants.
+- Should aim to never reach a failing assert statement
+- Meant to help static analyzers or formal verification tools examine contracts (see [article](https://medium.com/blockchannel/the-use-of-revert-assert-and-require-in-solidity-and-the-new-revert-opcode-in-the-evm-1a3a7990e06e))
+- Steals all the gas
+- uses `0xfe` opcode to cause error
+- Typically used for overflow / underflow
+- Used towards end of a function
 
 ### Function Modifiers
 
-```
-
+```javascript
 modifier costs(uint price) {
-if (msg.value >= price) {
-\_; // executes the remainder of contract
-}
+  if (msg.value >= price) {
+    _; // executes the remainder of contract
+  }
 }
 
 ```
 
 ### Fallback Function
 
-* [(Fallback Function docs)](https://solidity.readthedocs.io/en/v0.4.21/contracts.html#fallback-function)
-* Executed when contract receives plain ether without data (fallback function must be `payable`), or when called w/ function it doesn't recognize (`.send`, `.transfer`)
-* Can only rely on 2300 gas being available - cannot do a lot of things
+- [(Fallback Function docs)](https://solidity.readthedocs.io/en/v0.4.21/contracts.html#fallback-function)
+- Executed when contract receives plain ether without data (fallback function must be `payable`), or when called w/ function it doesn't recognize (`.send`, `.transfer`)
+- Can only rely on 2300 gas being available - cannot do a lot of things
 
-```
-
+```javascript
 function() public payable {
-balance += msg.value
+  balance += msg.value
 }
-
 ```
 
 ### Function overloading
 
-* Can have multiple functions with same name, require different arguments
-* Inherited functions: Child contract will override parent contract function
+- Can have multiple functions with same name, require different arguments
+- Inherited functions: Child contract will override parent contract function
 
 ```
-
 function f (uint \_a)
 function f (uint \_a, bytes32 \_b)
-
 ```
 
-## Storage and Memory
+## Data Locations
 
 - [ ] [Storage, Memory and the Stack](https://solidity.readthedocs.io/en/v0.4.21/introduction-to-smart-contracts.html#storage-memory-and-the-stack): EVM is a stack machine
+- [ ] [Solidity Documentation on Data Location](https://solidity.readthedocs.io/en/v0.4.24/types.html#data-location)
+- [ ] When retrieving values from an array, mapping or struct from storage, what is the default data location?
 
-### Data Locations
+### Types of Data Locations
 
-#### Types of Data Locations
+- Storage = hard drive, persists across function calls, stored on every node in the blockchain
+- Memory = persists for function call
+- Call stack = cheapest, but only 1024 call depth
+- CallData?
 
-* Storage = hard drive, persists across function calls, stored on every node in the blockchain
-* Memory = persists for function call
-* Call stack = cheapest, but only 1024 call depth
+### Specifying data location
 
-```
-
-state variables // storage
-function arguments // memory
-
-```
-
-#### Specifying data location
-
-* Most of the time data locations cannot be specified as variables are copied every time they are used
-* Except for arrays, structs, mapping (important!)
+- Most of the time data locations cannot be specified as variables are copied every time they are used
+- Except for arrays, structs, mapping (important!)
 
 ```
-
 // Following are passed by reference (i.e. modifies storage values)
 array[] storage;
 struct n storage;
@@ -716,6 +702,116 @@ mapping n storage;
 
 // Make a copy with the memory keyword
 struct b memory = n;
+```
+
+### Default data locations
+
+- Function parameters (incl return): `memory` or `calldata` (if external)
+- Local variables: `storage`
+- State variables: `storage`
+
+### Passsing by Reference or Value?
+
+- [ ] [Good Article](https://medium.com/loom-network/ethereum-solidity-memory-vs-storage-how-to-initialize-an-array-inside-a-struct-184baf6aa2eb)
+
+Solidity has the equivalent of C's "pointers", initialized with the storage keyword
+`uint[20] storage y`: `y` is storage pointer to a `uint` array of size 20
+
+```javascript
+pragma solidity ^0.5.0;
+
+contract C {
+    uint[20] public x;
+
+    function f() public {
+        h(x);
+        g(x);
+    }
+
+    /* @arg: y is a copy of x
+     * X is passed in by value, fresh copy made in memory
+     */
+    function g(uint[20] memory y) internal pure {
+        y[2] = 3;
+    }
+
+    /* @arg: y is a storage pointer (or C++ speak "reference variable")
+     * Passes x in by reference
+     * (C++ equivalent: h(uint[20] &x) OR function h(uint[20] *x), y = *x
+     */
+    function h(uint[20] storage y) internal {
+        y[2] = 4;
+    }
+}
+```
+
+### Assigning between data locations
+
+1. Assignments between `storage` and `memory` always creat independent copy
+2. Assignments between `storage`/`memory` to `state variable` create independent copy
+3. Assignments to `local storage variables` only assign reference that points to `state variable`
+4. Assignments from `memory` to `memory` do not create a copy
+
+```javascript
+pragma solidity ^0.5.0;
+
+contract demo {
+    uint[] a;
+    uint[] b;
+
+    constructor() public {}
+
+    function sampleFunc(uint[] memory memoryArr)
+        public
+    {
+        /* Assign from calldata or memory to state variable
+         * i.e. pass by value, new independent copy created
+         */
+        a = memoryArr;
+
+        /* Assign from argument by reference
+         * - Doesn't work because it needs to create new temporary / unnamed array in storage, but storage is "statically" allocated in state variables
+         */
+        // uint[] storage y1 = memoryArr;
+
+        /* Assign from memory to memory
+         * i.e. pass by reference, doesn't create new copy
+         */
+        uint[] memory y2 = memoryArr;
+
+        /* Assign from memory to storage
+         * uint256[] memory is not implicitly convertible to uint256[] storage pointer
+         */
+        // uint[] storage y3 = memoryArr;
+
+        /* Assign from state variable to storage
+         * uint256[] memory is not implicitly convertible to uint256[] storage pointer
+         */
+        uint[] storage y3 = a;
+
+    }
+}
+```
+
+### Allocating memory via `new`
+
+### Details of data locations
+
+#### Calldata
+
+- [ ] https://ethereum.stackexchange.com/questions/52989/what-is-calldata
+
+* `calldata` is where data from external functions is stored (i.e. `msg.data`)
+* Only when function visibility `external`. Doesn't exist if function is `public`
+* When receiving large arrays of data, helps `external` functions be more gas-efficient than `public` functions, as `msg.data` is not copied over to `memory`. See [External vs Public best practices](https://ethereum.stackexchange.com/questions/19380/external-vs-public-best-practices)
+
+```javascript
+function notarize(string calldata document)
+    external
+  {
+    bytes32 proof = proofFor(document);
+    storeProof(proof);
+  }
 
 ```
 
@@ -723,9 +819,7 @@ struct b memory = n;
 
 - [ ] [Smart Contracts as State Machines](https://solidity.readthedocs.io/en/develop/common-patterns.html?#state-machine)
 
-
-```
-
+```javascript
 pragma solidity ^0.5.0; // valid compiler version, need to be very careful
 
 contract SimpleStorage { // Capitalize by convention
@@ -736,7 +830,7 @@ modifier onlyOwner🇲🇲
 constructor() or SimpleStorage()
 
 sampleFunction();
-// can also include inline assembly
+  // can also include inline assembly
 }
 
 ```
@@ -745,22 +839,21 @@ sampleFunction();
 
 - [ ] [Reading Smart Contracts](https://sunnya97.gitbooks.io/a-beginner-s-guide-to-ethereum-and-dapp-developme/basic-practice-reading-contracts.html)
 
-
 ## Smart Contract ABI
 
-* ABI is a low-level API for the JSON RPC to interact with bytecode on-chain
-* ABI de-facto method of encoding / decoding data in and out of transactions
+- ABI is a low-level API for the JSON RPC to interact with bytecode on-chain
+- ABI de-facto method of encoding / decoding data in and out of transactions
 
 ![](images/2019-05-31-18-30-13.png)
 ![](images/2019-05-31-18-34-01.png)
 
 ## Events and logs
 
-* Transaction log is a special data structure used to store past events
-* Gotcha: logs cannot be accessed from contracts
-* Main use 1: UI or app can update based on events
-* Main use 2: Cheap form of storage (8 gas per byte, while contract storage costs 625 gas per byte)
-* Adding `indexed` keyword to event params allows searchability
+- Transaction log is a special data structure used to store past events
+- Gotcha: logs cannot be accessed from contracts
+- Main use 1: UI or app can update based on events
+- Main use 2: Cheap form of storage (8 gas per byte, while contract storage costs 625 gas per byte)
+- Adding `indexed` keyword to event params allows searchability
 
 ```
 
@@ -777,7 +870,7 @@ return \_value;
 
 ## Factory Contracts
 
-* Solidity is not OO, but adopts some design patterns (e.g. factory design pattern)
+- Solidity is not OO, but adopts some design patterns (e.g. factory design pattern)
 
 ```
 
@@ -802,10 +895,11 @@ Token newToken = new Token(\_initialAmount) // Creates new instance
 
 ## Inter-contract Execution
 
-* Contracts are viewed as first class members in Ethereum
-* Externally-owned accounts (i.e. )
+- Contracts are viewed as first class members in Ethereum
+- Externally-owned accounts (i.e. )
 
 ### Referencing another contract
+
 ```
 
 pragma solidity ^0.4.1;
@@ -836,14 +930,14 @@ return c1.getX();
 }
 }
 
-````
+```
 
 ### Call vs CallCode vs DelegateCall
 
-* `.call` or `.callcode`: `msg.sender` is the calling contract, storage and state are from child contract
-* `.delegatecall`: `msg.sender` is original `tx.origin`, and storage and state are from parent contract
+- `.call` or `.callcode`: `msg.sender` is the calling contract, storage and state are from child contract
+- `.delegatecall`: `msg.sender` is original `tx.origin`, and storage and state are from parent contract
 
-* Solidity uses `bytes4(sha3("setNum(uint256)"))` under the hood to create function signature when calling another contract. Is equivalent of getting instance of C2 contract, calling setNum function. First 4 bytes of sha3 of functions signature
+- Solidity uses `bytes4(sha3("setNum(uint256)"))` under the hood to create function signature when calling another contract. Is equivalent of getting instance of C2 contract, calling setNum function. First 4 bytes of sha3 of functions signature
 
 ```javascript
 c2.call(bytes4(sha3("setNum(uint256)"))
@@ -851,7 +945,7 @@ c2.call(bytes4(sha3("setNum(uint256)"))
 // is the equivalent of
 C2 c2 = C2(_c2);
 c2.setNum(_num);
-````
+```
 
 ```javascript
 pragma solidity ^0.4.15;
@@ -1001,10 +1095,64 @@ interface Token {
 
 ## Libaries
 
-- Exist for code reuse - allow library functions to modify state of calling contract (i.e. `delegatecall`)
-- No storage variables are defined (do not have state)
+- Exist for code reuse - allow library functions to modify state of calling contract (i.e. `delegatecall`). When library functions are called, code is executed in context of calling contract (i.e `this` points to calling contract)
+- `internal` functions for libraries will be pulled into calling contract at compile time, and regular `JUMP` call (instead of `delegatecall`) will be used
+
+https://ethereum.stackexchange.com/questions/11743/how-to-call-a-library-contract
+
+```javascript
+contract ECVerify {
+    function ecverify(bytes32 hash, bytes sig, address signer) returns (bool);
+}
+
+contract Foo {
+    ECVerify ecv = ECVerify(0x3bbb367afe5075e0461f535d6ed2a640822edb1c);
+
+    function callEcv(bytes32 hash, bytes sig, address signer) {
+        bool b = ecv.ecverify(hash, sig, signer);
+        // handle b
+    }
+}
+```
+
+- No storage variables are defined (do not have state). Library functions DO NOT HAVE STATE. Can only access state variables of calling contract is they are explicitly supplied as args. It has no way to name state variables.
+- Instead, can pass storage pointers into Library functions
+- **Idiom:** use `self` as first param to library function, which passes struct / "state" of library to the function
 - GOTCHA: can define struct data type, but will not be saved in storage until implemented in contract
-- GOTCHA: calling library function is more expensive than calling internal function (in exchange for cheaper deployment)
+
+From docs:
+
+```
+pragma solidity >=0.4.22 <0.6.0;
+
+library Set {
+  struct Data { mapping(uint => bool) flags; }
+
+  // It is idiomatic to call the first parameter `self`, if the function can be seen as a method of that object.
+  function insert(Data storage self, uint value)
+      public
+      returns (bool)
+  {
+      if (self.flags[value]) return false; // already there
+      self.flags[value] = true;
+      return true;
+  }
+}
+
+contract C {
+    Set.Data knownValues;
+
+    function register(uint value) public {
+        // No need to instantiate Set, as "instance" will be current contract
+        require(Set.insert(knownValues, value));
+        // In this contract, we can also directly access knownValues.flags, if we want.
+    }
+}
+```
+
+- GOTCHA: calling library function is more expensive than calling internal function (in exchange for cheaper deployment) as `delegatecall` consumes more gas?
+
+- To use a library with a new contract in Truffle, must explicitly link it to library
 
 ```javascript
 deployer.deploy(LibA);
@@ -1026,7 +1174,46 @@ module.exports = function(deployer) {
 };
 ```
 
-[Good Overview of Libraries and Solidity](https://blog.aragon.org/library-driven-development-in-solidity-2bebcaf88736/)
+- [ ] Write a better answer for https://ethereum.stackexchange.com/questions/11743/how-to-call-a-library-contract
+- [ ] https://medium.com/coinmonks/all-you-should-know-about-libraries-in-solidity-dd8bc953eae7
+- [ ] https://solidity.readthedocs.io/en/v0.5.3/contracts.html#libraries
+- [ ] [Good Overview of Libraries and Solidity](https://blog.aragon.org/library-driven-development-in-solidity-2bebcaf88736/)
+
+#### Using For
+
+```
+pragma solidity >=0.4.16 <0.6.0;
+
+library Search {
+    function indexOf(uint[] storage self, uint value)
+        public
+        view
+        returns (uint)
+    {
+        for (uint i = 0; i < self.length; i++)
+            if (self[i] == value) return i;
+        return uint(-1);
+    }
+}
+
+contract C {
+    using Search for uint[];
+    uint[] data;
+
+    function append(uint value) public {
+        data.push(value);
+    }
+
+    function replace(uint _old, uint _new) public {
+        // This performs the library function call
+        uint index = data.indexOf(_old);
+        if (index == uint(-1))
+            data.push(_new);
+        else
+            data[index] = _new;
+    }
+}
+```
 
 ### EthPM
 
@@ -1037,7 +1224,25 @@ module.exports = function(deployer) {
 truffle install <pkgname>
 ```
 
+# Debugging Contracts
+
+## Using Truffle Test and Ganache-cli
+
+- You get to step over historical execution of the transaction, map it onto the associated code
+
+Run `truffle test`
+Latest transaction hash will be in Ganache-cli
+
+https://truffleframework.com/docs/truffle/getting-started/debugging-your-contracts
+https://truffleframework.com/tutorials/debugging-a-smart-contract
+
+; is to see the stack at that point in time (along with opcode being executed)
+q is to quit
+can set breakpoints, etc
+
 # Smart Contract Security
+
+- [ ] https://consensys.github.io/smart-contract-best-practices/
 
 ## Re-entrancy attack
 
@@ -1060,7 +1265,97 @@ balances[msg.sender] = 0;
 
 - [ ] Build a Plasma chain tutorial https://medium.com/@dan_30977/new-chainshot-tutorial-plasma-mvp-a80629841936
 
+# Testing Cookbook
+
+## Basic Function Calls
+
+```
+contract('SimpleBank', function(accounts) {
+  const owner = accounts[0]
+  const alice = accounts[1]
+  const bob = accounts[2]
+  const deposit = web3.utils.toBN(2)
+
+  beforeEach(async () => {
+    instance = await SimpleBank.new()
+  })
+
+  // Checking for return values
+  it("should mark addresses as enrolled", async () => {
+    await instance.enroll({from: alice})
+
+    const aliceEnrolled = await instance.enrolled(alice, {from: alice})
+    assert.equal(aliceEnrolled, true, 'enroll balance is incorrect, check balance method or constructor')
+  });
+}
+```
+
+## Assert for event logs
+
+```javascript
+
+// Check for event logs
+it("should log a deposit event when a deposit is made", async() => {
+  await instance.enroll({from: alice})
+  const result  = await instance.deposit({from: alice, value: deposit})
+
+  const expectedEventResult = {accountAddress: alice, amount: deposit}
+
+  const logAccountAddress = result.logs[0].args.accountAddress
+  const logDepositAmount = result.logs[0].args.amount.toNumber()
+
+  assert.equal(expectedEventResult.accountAddress, logAccountAddress, "LogDepositMade event accountAddress property not emitted, check deposit method");
+  assert.equal(expectedEventResult.amount, logDepositAmount, "LogDepositMade event amount property not emitted, check deposit method")
+})
+```
+
+## Catching a revert
+
+```javascript
+// exceptionHelpers.js 
+const errorString = "VM Exception while processing transaction: ";
+
+async function tryCatch(promise, reason) {
+    try {
+        await promise;
+        throw null;
+    }
+    catch (error) {
+        assert(error, "Expected a VM exception but did not get one");
+        assert(error.message.search(errorString + reason) >= 0, "Expected an error containing '" + errorString + reason + "' but got '" + error.message + "' instead");
+    }
+};
+
+module.exports = {
+    catchRevert            : async function(promise) {await tryCatch(promise, "revert"             );},
+    catchOutOfGas          : async function(promise) {await tryCatch(promise, "out of gas"         );},
+    catchInvalidJump       : async function(promise) {await tryCatch(promise, "invalid JUMP"       );},
+    catchInvalidOpcode     : async function(promise) {await tryCatch(promise, "invalid opcode"     );},
+    catchStackOverflow     : async function(promise) {await tryCatch(promise, "stack overflow"     );},
+    catchStackUnderflow    : async function(promise) {await tryCatch(promise, "stack underflow"    );},
+    catchStaticStateChange : async function(promise) {await tryCatch(promise, "static state change");},
+};
+
+// In test file
+let catchRevert = require("./exceptionsHelpers.js").catchRevert
+
+it("should not be able to withdraw more than has been deposited", async() => {
+    await instance.enroll({from: alice})
+    await instance.deposit({from: alice, value: deposit})
+    await catchRevert(instance.withdraw(deposit + 1, {from: alice}))
+  })
+
+```
+
+## 
+
+
+
 # Cookbooks
+
+## Deploy contract from smart contract
+
+https://ethereum.stackexchange.com/questions/5676/create-new-contract-via-call
 
 ## Time-based contract
 
