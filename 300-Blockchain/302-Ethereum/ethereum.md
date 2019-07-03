@@ -195,69 +195,7 @@ truffle develop // opens up console, with live contracts deployed
 Add to code snippet below to remember test best practices / cookbooks
 
 ```javascript
-// contract function instead of describe. Contracts are re-deployed ('clean room function')
 
-contract("MetaCoin", accounts => {
-  it("should put 10000 MetaCoin in the first account", async () => {
-    const metaCoinInstance = await MetaCoin.deployed();
-    const balance = await metaCoinInstance.getBalance.call(accounts[0]);
-
-    assert.equal(balance.valueOf(), 10000, "10000 wasn't in the first account");
-  });
-  it("should call a function that depends on a linked library", async () => {
-    const metaCoinInstance = await MetaCoin.deployed();
-    const metaCoinBalance = (await metaCoinInstance.getBalance.call(
-      accounts[0]
-    )).toNumber();
-    const metaCoinEthBalance = (await metaCoinInstance.getBalanceInEth.call(
-      accounts[0]
-    )).toNumber();
-
-    assert.equal(
-      metaCoinEthBalance,
-      2 * metaCoinBalance,
-      "Library function returned unexpected function, linkage may be broken"
-    );
-  });
-  it("should send coin correctly", async () => {
-    const metaCoinInstance = await MetaCoin.deployed();
-
-    // Setup 2 accounts.
-    const accountOne = accounts[0];
-    const accountTwo = accounts[1];
-
-    // Get initial balances of first and second account.
-    const accountOneStartingBalance = (await metaCoinInstance.getBalance.call(
-      accountOne
-    )).toNumber();
-    const accountTwoStartingBalance = (await metaCoinInstance.getBalance.call(
-      accountTwo
-    )).toNumber();
-
-    // Make transaction from first account to second.
-    const amount = 10;
-    await metaCoinInstance.sendCoin(accountTwo, amount, { from: accountOne });
-
-    // Get balances of first and second account after the transactions.
-    const accountOneEndingBalance = (await metaCoinInstance.getBalance.call(
-      accountOne
-    )).toNumber();
-    const accountTwoEndingBalance = (await metaCoinInstance.getBalance.call(
-      accountTwo
-    )).toNumber();
-
-    assert.equal(
-      accountOneEndingBalance,
-      accountOneStartingBalance - amount,
-      "Amount wasn't correctly taken from the sender"
-    );
-    assert.equal(
-      accountTwoEndingBalance,
-      accountTwoStartingBalance + amount,
-      "Amount wasn't correctly sent to the receiver"
-    );
-  });
-});
 ```
 
 ### Things I've come across:
@@ -286,6 +224,25 @@ This arises when nothing is specified in `truffle-config.js`. See [my answer on 
 ## Estimating Gas
 
 https://ethgasstation.info/
+
+## VSCode Setup
+
+https://ethereum.stackexchange.com/questions/3451/source-code-formatter-for-solidity
+
+Linter: solhint,
+
+Formatter: prettier-plugin-solidity
+
+## CI CD Setup
+
+From Juan Castellon (Consensys Academy Slack)
+
+Hi @Daniel Onggunhao, very interesting questions you are asking. In my case I used Travis CI during the development of my project. I automated different steps: Contracts were deployed from my local to rinkeby, then the whole project was compiled and test were run on Travis CI, if tests past then UI was deployed from Travis to Heroku.  You could check how my project was configured for reference (https://github.com/Wearoft/kmp) keep in mind there might be better ways to do it, but due to time constraints that solved my needs.
+1. No in my case was only 1 repo.
+3. I used ganache-cli integrated in pipeline steps.
+4. In real world Yes! and in Blockchain I would say Yes Yes Yes!, it’s a MUST to have a PRE-PROD environment (Rinkeby, Ropsten, …) to test your app before spending some money deploying a non-working version on PROD. You’ll realise there will be deploys just to fix typos and small details that would cost you real money in PROD.
+5. Some recommendations: make sure you experiment a lot on testnet prior going to PROD. Things you could experience are: Contracts too big (nodes prefer smaller tx and get several fees), Nodes not picking your tx due to extremely low gas price. Check how other projects deal with big releases, I learnt a lot from Aragon and OpenZeppelin teams.
+Hope this help! :+1: (edited)
 
 # Solidity
 
@@ -425,6 +382,21 @@ contract test {
 }
 ```
 
+##### Testing Equality for enums
+
+```javascript
+  enum State {
+    ForSale,
+    Sold,
+    Shipped,
+    Received
+  }
+  
+  require(itemInstance.state == ForSale)
+```
+
+
+
 #### Function types
 
 - Functions can be passed params to other functions (?)
@@ -472,8 +444,11 @@ uint[] memory a = new uint[](<variable length>)
 - [ ] Why do we sometimes need a `storage` or `memory` when creating a struct
 - [ ] [Adding an Array to a Struct](https://medium.com/loom-network/ethereum-solidity-memory-vs-storage-how-to-initialize-an-array-inside-a-struct-184baf6aa2eb)
 
-```
-// Defines a new type with two fields.
+```javascript
+pragma solidity >=0.4.11 <0.6.0;
+
+contract CrowdFunding {
+    // Defines a new type with two fields.
     struct Funder {
         address addr;
         uint amount;
@@ -486,15 +461,56 @@ uint[] memory a = new uint[](<variable length>)
         uint amount;
         mapping (uint => Funder) funders;
     }
+
+    uint numCampaigns;
+    mapping (uint => Campaign) campaigns;
+
+    function newCampaign(address payable beneficiary, uint goal) public returns (uint campaignID) {
+        campaignID = numCampaigns++; // campaignID is return variable
+        // Creates new struct in memory and copies it to storage. Leave out reference type when initializing
+        campaigns[campaignID] = Campaign(beneficiary, goal, 0, 0);
+    }
+
+    function contribute(uint campaignID) public payable {
+        Campaign storage c = campaigns[campaignID];
+        // Creates a new temporary memory struct, initialised with the given values
+        // and copies it over to storage.
+        // Note that you can also use Funder(msg.sender, msg.value) to initialise.
+        c.funders[c.numFunders++] = Funder({addr: msg.sender, amount: msg.value});
+        c.amount += msg.value;
+    }
+
+    function checkGoalReached(uint campaignID) public returns (bool reached) {
+        Campaign storage c = campaigns[campaignID];
+        if (c.amount < c.fundingGoal)
+            return false;
+        uint amount = c.amount;
+        c.amount = 0;
+        c.beneficiary.transfer(amount);
+        return true;
+    }
+}
 ```
 
+##### Testing for equality betweem structs
+
+```
+How?
+```
+
+
+
 ##### Adding Struct to a Mapping
+
+https://ethereum.stackexchange.com/questions/10640/unable-to-add-new-struct-item-into-mapping-or-array
 
 ```
 
 ```
 
 ##### Adding a Struct to a Dynamic Array
+
+
 
 ### Mappings (i.e. hashtables)
 
@@ -535,6 +551,8 @@ block.timestamp (uint) // current block timestamp as unix epoch seconds. NOTE: c
 ```
 
 ## Functions
+
+- [ ] [Encoded function calls](https://medium.com/linum-labs/a-technical-primer-on-using-encoded-function-calls-50e2b9939223)
 
 ```
 function (<parameter types>)
@@ -578,7 +596,7 @@ returns (string)
 returns (string _name) // does not require return in function body
 ```
 
-**Returning reference types**: (e.g. arrays, structs), data location must be in **memory** to be returned
+Returning reference types**: (e.g. arrays, structs), data location must be in **memory** to be returned
 
 ```
 contract Adoption {
@@ -592,6 +610,24 @@ contract Adoption {
     }
 }
 ```
+
+Return variables in function declaration
+
+https://ethereum.stackexchange.com/questions/34046/what-is-the-purpose-of-giving-name-to-return-variables-in-function-declaration
+
+```
+function calculateSum(uint a, uint b) pure returns (uint sum) {
+    sum = a + b;
+}
+
+// is equivalent to
+function calculateSum(uint a, uint b) pure returns (uint sum) {
+    uint sum = a + b;
+    return sum;
+}
+```
+
+
 
 ### State Mutations
 
@@ -1247,6 +1283,7 @@ can set breakpoints, etc
 ## Re-entrancy attack
 
 - [ ] [Good explanation on Re-entrancy](https://medium.com/@gus_tavo_guim/reentrancy-attack-on-smart-contracts-how-to-identify-the-exploitable-and-an-example-of-an-attack-4470a2d8dfe4)
+- [ ] https://medium.com/@cdsudama/a-look-at-open-zeppelins-reentrancyguard-6ff3590d0719
 
 * **Gist:** Setting balance to 0 only after a `.call` can be taken advantage of, as `.call` only terminates after entire transaction sequence. This can be taken advantage of by a recursive fallback function
 
@@ -1264,12 +1301,44 @@ balances[msg.sender] = 0;
 ## Plasma
 
 - [ ] Build a Plasma chain tutorial https://medium.com/@dan_30977/new-chainshot-tutorial-plasma-mvp-a80629841936
+- [ ] https://docs.leapdao.org/tutorials/new-dapp/
 
 # Testing Cookbook
 
+## Useful tools
+
+- [ ] https://github.com/OpenZeppelin/openzeppelin-test-helpers
+
+- [ ] https://mochajs.org/#exclusive-tests
+
+## If there are weird errors 
+
+* It's likely because there is a change from previous `build` , or compiled contracts (.json) reflect old data type information in a funciton signature
+* Delete `build` folder, run `compile` and `migrate` again
+
+## Setup and Destroy
+
+```javascript
+// contract function instead of describe. Contracts are re-deployed ('clean room function')
+
+contract("MetaCoin", accounts => {
+	// Deploys a new version of the contract before each test run
+  beforeEach(async () => {
+    instance = await SimpleBank.new()
+  })
+  
+  // Uses the already-deployed version of the contract
+  beforeEach(async () => {
+      instance = await SimpleBank.deployed() 
+  })
+});
+```
+
+
+
 ## Basic Function Calls
 
-```
+```javascript
 contract('SimpleBank', function(accounts) {
   const owner = accounts[0]
   const alice = accounts[1]
@@ -1345,9 +1414,67 @@ it("should not be able to withdraw more than has been deposited", async() => {
     await catchRevert(instance.withdraw(deposit + 1, {from: alice}))
   })
 
+// Alternative
+    describe.only("buyTickets()", async () => {
+      it("tickets should only be able to be purchased when the event is open", async () => {
+        const numberOfTickets = 1;
+
+        // event w/ id 1 does not exist, therefore not open
+        await catchRevert(
+          instance.buyTickets(1, numberOfTickets, {
+            from: firstAccount,
+            value: ticketPrice
+          })
+        );
 ```
 
-## 
+## Comparing Account Balances
+
+* Weird example below which uses `.slice` as the ticket amount is only 100 wei
+* Need to account for gas transactions, which are in gwei (quite large)
+* - [ ] Need to decide on case-by-case basis how to test for comparator (range function?) 
+
+```javascript
+it("the contract balance should be transferred to the owner when the event is closed", async () => {
+        const numberOfTickets = 1;
+
+        const preSaleAmount = await web3.eth.getBalance(firstAccount);
+        await instance.buyTickets(numberOfTickets, {
+          from: secondAccount,
+          value: numberOfTickets * ticketPrice
+        });
+        await instance.endSale({ from: firstAccount });
+        const postSaleAmount = await web3.eth.getBalance(firstAccount);
+
+        assert.equal(
+          Number(postSaleAmount.slice(-4)),
+          (Number(preSaleAmount.slice(-4)) + numberOfTickets * ticketPrice)
+            .toString()
+            .slice(-4),
+          "contract owner should receive contract balance when closing the event"
+        );
+      });
+```
+
+## Run only one test
+
+* Use Mocha's exclusive tests (`it.only`)
+
+```
+describe('Array', function() {
+  describe('#indexOf()', function() {
+    it.only('should return -1 unless present', function() {
+      // ...
+    });
+
+    it('should return the index when present', function() {
+      // ...
+    });
+  });
+});
+```
+
+
 
 
 
