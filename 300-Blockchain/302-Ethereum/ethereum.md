@@ -391,7 +391,7 @@ contract test {
     Shipped,
     Received
   }
-  
+
   require(itemInstance.state == ForSale)
 ```
 
@@ -936,34 +936,36 @@ Token newToken = new Token(\_initialAmount) // Creates new instance
 
 ### Referencing another contract
 
-```
+```solidity
 
 pragma solidity ^0.4.1;
 
 contract C1 {
-uint x;
-function C1() public {
-x = 10;
-}
-function setX(uint \_x) public returns(bool) {
-x = \_x;
-return true;
-}
-function getX() public constant returns(uint) {
-return x;
-}
+  uint x;
+  function C1() public {
+    x = 10;
+  }
+
+  function setX(uint \_x) public returns(bool) {
+    x = \_x;
+    return true;
+  }
+
+  function getX() public constant returns(uint) {
+    return x;
+  }
 }
 
 contract C2 {
-function f2(address addrC1)
-public
-constant
-returns(uint)
-{
-// Referencing an existing contract at an address
-C1 c1 = C1(addrC1);
-return c1.getX();
-}
+  function f2(address addrC1)
+    public
+    constant
+    returns(uint)
+  {
+    // Referencing an existing contract at an address
+    C1 c1 = C1(addrC1);
+    return c1.getX();
+  }
 }
 
 ```
@@ -1154,7 +1156,7 @@ contract Foo {
 - No storage variables are defined (do not have state). Library functions DO NOT HAVE STATE. Can only access state variables of calling contract is they are explicitly supplied as args. It has no way to name state variables.
 - Instead, can pass storage pointers into Library functions
 - **Idiom:** use `self` as first param to library function, which passes struct / "state" of library to the function
-- GOTCHA: can define struct data type, but will not be saved in storage until implemented in contract
+- **GOTCHA**: can define struct data type, but will not be saved in storage until implemented in contract
 
 From docs:
 
@@ -1311,30 +1313,46 @@ balances[msg.sender] = 0;
 
 - [ ] https://mochajs.org/#exclusive-tests
 
-## If there are weird errors 
+## If there are weird errors
 
 * It's likely because there is a change from previous `build` , or compiled contracts (.json) reflect old data type information in a funciton signature
 * Delete `build` folder, run `compile` and `migrate` again
 
+## ES6 for tests
+
+[Good stackoverflow answer](https://ethereum.stackexchange.com/questions/21210/syntaxerror-unexpected-token-import-on-truffle-test)
+
+
+
+
 ## Setup and Destroy
 
+## Clean room functionality
+
+* `contract` creates Truffle's clean room functionality
+* `describe` turns off clean room functionality
+
+
+## Before and BeforeEach
+
+* There is a difference between Before (akin to beforeAll) and BeforeEach. See Mocha documentation
+* [Good Stack Overflow Article](https://stackoverflow.com/questions/54517032/beforeall-vs-beforeeach-when-to-use-them)
+
 ```javascript
-// contract function instead of describe. Contracts are re-deployed ('clean room function')
+// contract function insead of describe. Contracts are re-deployed ('clean room function')
 
 contract("MetaCoin", accounts => {
 	// Deploys a new version of the contract before each test run
   beforeEach(async () => {
     instance = await SimpleBank.new()
   })
-  
+
   // Uses the already-deployed version of the contract
   beforeEach(async () => {
-      instance = await SimpleBank.deployed() 
+      instance = await SimpleBank.deployed()
   })
 });
 ```
-
-
 
 ## Basic Function Calls
 
@@ -1342,6 +1360,7 @@ contract("MetaCoin", accounts => {
 contract('SimpleBank', function(accounts) {
   const owner = accounts[0]
   const alice = accounts[1]
+
   const bob = accounts[2]
   const deposit = web3.utils.toBN(2)
 
@@ -1353,6 +1372,7 @@ contract('SimpleBank', function(accounts) {
   it("should mark addresses as enrolled", async () => {
     await instance.enroll({from: alice})
 
+    // Can get public getter values easily
     const aliceEnrolled = await instance.enrolled(alice, {from: alice})
     assert.equal(aliceEnrolled, true, 'enroll balance is incorrect, check balance method or constructor')
   });
@@ -1381,7 +1401,7 @@ it("should log a deposit event when a deposit is made", async() => {
 ## Catching a revert
 
 ```javascript
-// exceptionHelpers.js 
+// exceptionHelpers.js
 const errorString = "VM Exception while processing transaction: ";
 
 async function tryCatch(promise, reason) {
@@ -1432,7 +1452,7 @@ it("should not be able to withdraw more than has been deposited", async() => {
 
 * Weird example below which uses `.slice` as the ticket amount is only 100 wei
 * Need to account for gas transactions, which are in gwei (quite large)
-* - [ ] Need to decide on case-by-case basis how to test for comparator (range function?) 
+* - [ ] Need to decide on case-by-case basis how to test for comparator (range function?)
 
 ```javascript
 it("the contract balance should be transferred to the owner when the event is closed", async () => {
@@ -1473,10 +1493,6 @@ describe('Array', function() {
   });
 });
 ```
-
-
-
-
 
 # Cookbooks
 
